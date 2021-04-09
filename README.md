@@ -2,8 +2,14 @@
 
 YAAU is a model to upscale images, trained on Danbooru.
 A lot of thanks to Gwern for hosting such an incredible resource.
+Original picture:
 ![original](./example/Miku.png)
-![result](./example/Result.png)
+
+upscaled with perceptual loss model:
+![result](example/Result_perceptual.png)
+
+upscaled with MSE loss model:
+![result](example/Result_mse.png)
 ## Installation
 
 you will need poetry. `./init_env.sh` will install dependencies.
@@ -12,4 +18,5 @@ If you want to use a pretrained model, you can download it in the releases.
 
 ```
 ## Usage
-`python ./super_res.py <source>`
+`python ./super_res.py <image>`
+ 

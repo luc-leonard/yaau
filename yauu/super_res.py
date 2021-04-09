@@ -21,9 +21,11 @@ def grid(image: PIL.Image.Image, grid_size) -> List[PIL.Image.Image]:
 scale = 4
 grid_size = 64
 big_grid_size = grid_size * scale
+device = 'cuda'
+
 def main():
-    data = torch.load('./super_res.pth')
-    model = data['model'].to('cuda').eval()
+    data = torch.load('./super_res_mse.pth', map_location=device)
+    model = data['model'].to(device).eval()
 
     image = PILImage.create(sys.argv[1])
 
@@ -33,7 +35,7 @@ def main():
     result = PIL.Image.new('RGB', (full_h, full_w))
     for x, row in enumerate(the_grid):
         for y, element in enumerate(row):
-            tensor = ToTensor()(element.resize((big_grid_size, big_grid_size))).unsqueeze(0).float().cuda()
+            tensor = ToTensor()(element.resize((big_grid_size, big_grid_size))).unsqueeze(0).float().to(device)
             img_hr, *_ = model(tensor)
             result.paste(to_image(img_hr.clip(0, 1)), (x * img_hr.shape[1], y * img_hr.shape[2]))
             del tensor
