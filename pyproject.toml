@@ -8,6 +8,7 @@ authors = ["Luc Léonard <github@luc-leonard.fr>"]
 python = "^3.8"
 fastai = "^2.3.0"
 jupyter = "^1.0.0"
+progressbar2 = "^3.53.1"
 
 [tool.poetry.dev-dependencies]
 
