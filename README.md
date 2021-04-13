@@ -51,11 +51,12 @@ You can use the scripts in yauu/training to train your own
 # Examples
 
 ## Danbooru
-A lot of thanks to Gwern for hosting such an incredible resource.
 Original picture:
+
 ![original](./example/Miku.png)
 
 upscaled with perceptual loss model:
+
 ![result](./example/Result_perceptual.png)
 
 ## Paintings
