@@ -129,3 +129,7 @@ dmypy.json
 .pyre/
 
 .idea
+
+models/
+data/
+/data/
