@@ -14,6 +14,7 @@ grid_size = 64
 overlap = grid_size // 2
 big_grid_size = (grid_size + overlap) * scale
 device = 'cuda'
+model_path = './super_res_vgg_rating.pth'
 
 
 def grid(image: PIL.Image.Image, grid_size) -> List[List[PIL.Image.Image]]:
@@ -29,7 +30,7 @@ def grid(image: PIL.Image.Image, grid_size) -> List[List[PIL.Image.Image]]:
 
 
 def main():
-    data = torch.load('./super_res.pth', map_location=device)
+    data = torch.load(model_path, map_location=device)
     model = data['model'].to(device).eval()
 
     image = PILImage.create(sys.argv[1])
