@@ -25,6 +25,8 @@ two pretrained network are provided:
 * super_res_painting.pth trained on paintings
 * super_res_danbooru.pth trained
 
+you can find these models here: https://mega.nz/folder/GQNDmYjQ#D6wMag7n_7LczJJtP-KQdQ
+
 for the time being, you will need to edit super_res.py to use the right model.
 
 `python super_res.py <image_path`

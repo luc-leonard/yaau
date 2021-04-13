@@ -44,7 +44,7 @@ class FeatureLoss(Module):
 def get_loss(model_path):
     loaded = torch.load(model_path)
     print(loaded)
-    vgg_m = loaded[0][0].eval()
+    vgg_m = loaded['model'].eval()
 
     blocks = [i - 1 for i, o in enumerate(vgg_m.children()) if isinstance(o, nn.MaxPool2d)]
 

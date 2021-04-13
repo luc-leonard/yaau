@@ -10,14 +10,6 @@ from typing import List
 from PIL import ImageDraw
 
 
-# TODO: use args for this
-scale = 4
-grid_size = 64
-
-device = 'cuda'
-model_path = '/home/lleonard/dev/perso/super_res/yaau/models/super_res/super_res_painting.pth'
-
-
 def grid(image: PIL.Image.Image, grid_size, overlap) -> List[List[PIL.Image.Image]]:
     the_grid = []
     h, w = image.shape
@@ -32,7 +24,7 @@ def grid(image: PIL.Image.Image, grid_size, overlap) -> List[List[PIL.Image.Imag
 
 def main(args):
     overlap = args.grid_size // 2
-    big_grid_size = (args.grid_size + overlap) * scale
+    big_grid_size = (args.grid_size + overlap) * args.scale
 
     data = torch.load(args.model, map_location=args.device)
     model = data['model'].to(args.device).eval()
@@ -49,7 +41,7 @@ def main(args):
 
     for x, row in enumerate(the_grid):
         for y, element in enumerate(row):
-            tensor = ToTensor()(element.resize((big_grid_size, big_grid_size))).unsqueeze(0).float().to(device)
+            tensor = ToTensor()(element.resize((big_grid_size, big_grid_size))).unsqueeze(0).float().to(args.device)
             img_hr, *_ = model(tensor)
             img_hr = to_image(img_hr.clip(0, 1))
             result.paste(img_hr,
