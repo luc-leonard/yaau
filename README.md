@@ -41,7 +41,9 @@ The classifier needs to use a vgg architecture.
 
 ## the upscaler
 
-The upscaler is a U network with a resnet34 encoder. It is trained in 2 stages 
+The upscaler is a U network with a resnet34 encoder. 
+It is trained in a progressive way from very small image to bigger ones.
+You can use the scripts in yauu/training to train your own
   
 
 # Examples
