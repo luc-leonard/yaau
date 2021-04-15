@@ -6,11 +6,6 @@ from pathlib import Path
 import torch
 
 
-
-# def parent_filter(root_folder, ok_parents: List[Path]):
-#     def f(path: Path):
-#         return path.p
-
 class UpscalerDataset:
     def __init__(self, hr_path: Path, lr_path: Path):
         self.hr_path = hr_path

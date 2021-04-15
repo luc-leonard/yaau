@@ -1,21 +1,14 @@
+import argparse
 import time
-from pathlib import Path
 
 import torch
 from fastai.layers import NormType
 from fastai.metrics import LossMetrics
 from fastai.vision.learner import unet_learner
-from torchvision.models import resnet34, resnet50
+from torchvision.models import resnet50
 
 from data import UpscalerDataset
 from loss import get_loss
-import argparse
-
-
-
-DATASET_PATH = Path('/home/lleonard/Documents/datasets/best_art/images/512px/')
-RESIZED_PATH = Path('/home/lleonard/Documents/datasets/best_art/images/96px/')
-LOSS_MODEL_PATH = Path('/home/lleonard/dev/perso/super_res/yaau/nb/painting/models/paintings_artist_classifier.pth')
 
 lr = 3e-3
 wd = 1e-3
@@ -37,6 +30,7 @@ def make_meta(arguments) -> dict:
         'base_arch': 'resnet50'
     }
 
+
 def main(arguments):
     dls = UpscalerDataset(arguments.dataset_path, arguments.resized_dataset_path)
     feat_loss = get_loss(arguments.loss_model_path)
@@ -51,9 +45,13 @@ def main(arguments):
     learner.unfreeze()
     do_fit(learner, wd, slice(1e-5, lr))
 
+    # checkpoint
+    learner.save('checkpoint')
+    learner.load('checkpoint')
     # stage 2
     print('stage 2')
-    learner.dls = dls.get_dataloaders(12, size * 2)
+    del learner.dls
+    learner.dls = dls.get_dataloaders(5, size * 2)
     learner.freeze()
     do_fit(learner, wd, slice(lr))
     learner.unfreeze()
@@ -70,6 +68,7 @@ def get_arguments():
     parser.add_argument('--loss-model-path', help='path to loss model')
     parser.add_argument('--output', help='output', default='./super_res.pth')
     return parser.parse_args()
+
 
 if __name__ == '__main__':
     arguments = get_arguments()

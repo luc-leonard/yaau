@@ -12,12 +12,14 @@ trained on different corpus, and with different classifiers.
 It also provide a generic python script to use such upscalers in a generic way, with images of any size.
 
 # Repository organisation
-|
+```
 |- nb: notebooks that contains the training code
-|  |- painting: a model trained on https://www.kaggle.com/ikarus777/best-artworks-of-all-time
-|  |- danbooru: a model trained on a subset of Danbooru
+|  |- painting: notebooks for traning classifier and super res model for paintings
+|  |- danbooru: notebooks for traning classifier and super res model for danbooru
 |- yauu: the python code that will upscale wholes images
-
+   |- super_res.py: the main script for inference
+   |- training: the folder containing the script to train your own model
+```
 # Usage:
 
 two pretrained network are provided:
