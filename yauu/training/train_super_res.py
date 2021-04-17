@@ -31,7 +31,7 @@ def make_meta(arguments) -> dict:
     }
 
 
-def main(arguments):
+def train(arguments):
     dls = UpscalerDataset(arguments.dataset_path, arguments.resized_dataset_path)
     feat_loss = get_loss(arguments.loss_model_path)
 
@@ -61,6 +61,8 @@ def main(arguments):
     torch.save({'model': learner.model, 'meta': make_meta(arguments)}, arguments.output)
 
 
+
+
 def get_arguments():
     parser = argparse.ArgumentParser(description='Train an upscaler')
     parser.add_argument('--dataset-path', help='path to full_size dataset')
@@ -72,4 +74,4 @@ def get_arguments():
 
 if __name__ == '__main__':
     arguments = get_arguments()
-    main(arguments)
+    train(arguments)

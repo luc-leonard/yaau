@@ -8,7 +8,7 @@ import torch
 from PIL import ImageDraw
 from fastai.vision.core import PILImage, to_image
 from torchvision.transforms import ToTensor
-
+import onnxruntime
 
 def grid(image: PIL.Image.Image, grid_size, overlap) -> List[List[PIL.Image.Image]]:
     the_grid = []
@@ -22,48 +22,18 @@ def grid(image: PIL.Image.Image, grid_size, overlap) -> List[List[PIL.Image.Imag
     return the_grid
 
 
-def super_res(file_path: Path, scale: int, grid_size: int, overlap_factor, model: Path, device: str) -> PIL.Image:
-    overlap = grid_size // overlap_factor
-
-    big_grid_size = (grid_size + overlap) * scale
-
-    data = torch.load(model, map_location=device)
-    model = data['model'].to(device).eval()
-
-    image = PILImage.create(file_path)
-
-    the_grid = grid(image, grid_size, overlap)
-    full_w = (big_grid_size - (overlap * scale)) * len(the_grid[0])
-    full_h = (big_grid_size - (overlap * scale)) * len(the_grid)
-
-    result = PIL.Image.new('RGBA', (full_h, full_w))
-
-    alpha_circle = PIL.Image.new('1', (big_grid_size, big_grid_size))
-    ImageDraw.Draw(alpha_circle).ellipse([(0, 0), ((big_grid_size, big_grid_size))], fill=(255,))
-
-    for x, row in enumerate(the_grid):
-        for y, element in enumerate(row):
-            tensor = ToTensor()(element.resize((big_grid_size, big_grid_size))).unsqueeze(0).float().to(device)
-            img_hr, *_ = model(tensor)
-            img_hr = to_image(img_hr.clip(0, 1))
-            result.paste(img_hr,
-                         (
-                             x * (big_grid_size - (overlap * scale)),
-                             y * (big_grid_size - (overlap * scale))
-                         ), alpha_circle
-                         )
-            del tensor
-            del img_hr
-    return result
-
-
 class Upscaler:
     def __init__(self, image_path: Path, model, scale: int, grid_size: int, overlap_factor: int, device: str):
         # the image to upscale
         self.image = PILImage.create(image_path)
         # the model to use
-        data = torch.load(model, map_location=device)
-        self.model = data['model'].to(device).eval()
+        if model.endswith('.pth'):
+            data = torch.load(model, map_location=device)
+            self.pt_model = data['model'].to(device).eval()
+            self.onnx = False
+        elif model.endswith('.onnx'):
+            self.model = onnxruntime.InferenceSession(model)
+            self.onnx = True
         # the scaling factor
         self.scale = scale
         # the base size of each tile
@@ -94,10 +64,15 @@ class Upscaler:
         y_idx = idx // len(self.tiles[0])
         tile_to_upscale = self.tiles[y_idx][x_idx]
         tile_to_upscale.resize((self.big_grid_size, self.big_grid_size))
-        tensor = ToTensor()(tile_to_upscale.resize((self.big_grid_size, self.big_grid_size))).unsqueeze(0).float().to(
-            self.device)
-        img_hr, *_ = self.model(tensor)
+        tensor = ToTensor()(tile_to_upscale.resize((self.big_grid_size, self.big_grid_size))).unsqueeze(0).float()
+
+        if self.onnx:
+            inputs = {self.model.get_inputs()[0].name: tensor.numpy()}
+            img_hr = torch.tensor(self.model.run(None, inputs)[0].squeeze(0))
+        else:
+            img_hr, *_ = self.pt_model(tensor.cuda())
         img_hr = to_image(img_hr.clip(0, 1))
+
         self.result.paste(img_hr,
                           (
                               y_idx * (self.big_grid_size - (self.overlap * self.scale)),
