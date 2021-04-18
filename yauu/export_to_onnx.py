@@ -18,7 +18,9 @@ def export(model_path, image_size, output_file):
 def get_arguments():
     parser = argparse.ArgumentParser(description='Train an upscaler')
     parser.add_argument('--model', help='input')
-    parser.add_argument('--size', help='image size', type=int)
+    parser.add_argument('--grid-size', help='image size', type=int, default=64)
+    parser.add_argument('--scale', help='image size', type=int, default=4)
+    parser.add_argument('--overlap-factor', help='image size', type=int, default=2)
     parser.add_argument('--output', help='output')
     return parser.parse_args()
 

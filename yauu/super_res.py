@@ -3,37 +3,42 @@ import sys
 from pathlib import Path
 from typing import List
 
+import PIL
 import PIL.Image
+import numpy as np
 import torch
-from PIL import ImageDraw
-from fastai.vision.core import PILImage, to_image
-from torchvision.transforms import ToTensor
 import onnxruntime
+
+from PIL import ImageDraw
+from torchvision.transforms import ToTensor
+
 
 def grid(image: PIL.Image.Image, grid_size, overlap) -> List[List[PIL.Image.Image]]:
     the_grid = []
-    h, w = image.shape
-    for x in range(0, w - grid_size, grid_size):
+    w, h = image.size
+    for x in range(0, w, grid_size):
         row = []
-        for y in range(0, h - grid_size, grid_size):
+        for y in range(0, h, grid_size):
             row.append(image.crop(
                 (x - overlap // 2, y - overlap // 2, x + grid_size + overlap // 2, y + grid_size + overlap // 2)))
         the_grid.append(row)
     return the_grid
 
 
+def to_image(x):
+    "Convert a tensor or array to a PIL int8 Image"
+    if isinstance(x, PIL.Image.Image): return x
+    if isinstance(x, torch.Tensor): x = x.permute((1, 2, 0)).cpu().numpy()
+    if x.dtype == np.float32: x = (x * 255).astype(np.uint8)
+    return PIL.Image.fromarray(x, mode=['RGB', 'CMYK'][x.shape[0] == 4])
+
+
 class Upscaler:
     def __init__(self, image_path: Path, model, scale: int, grid_size: int, overlap_factor: int, device: str):
         # the image to upscale
-        self.image = PILImage.create(image_path)
+        self.image = PIL.Image.open(image_path)
         # the model to use
-        if model.endswith('.pth'):
-            data = torch.load(model, map_location=device)
-            self.pt_model = data['model'].to(device).eval()
-            self.onnx = False
-        elif model.endswith('.onnx'):
-            self.model = onnxruntime.InferenceSession(model)
-            self.onnx = True
+        self.model = onnxruntime.InferenceSession(model)
         # the scaling factor
         self.scale = scale
         # the base size of each tile
@@ -49,8 +54,8 @@ class Upscaler:
         self.alpha_circle = PIL.Image.new('1', (self.big_grid_size, self.big_grid_size))
         ImageDraw.Draw(self.alpha_circle).ellipse([(0, 0), (self.big_grid_size, self.big_grid_size)], fill=(255,))
 
-        full_w = (self.big_grid_size - (self.overlap * self.scale)) * len(self.tiles[0])
-        full_h = (self.big_grid_size - (self.overlap * self.scale)) * len(self.tiles)
+        full_w = (self.big_grid_size - (self.overlap * self.scale)) * (len(self.tiles[0]) + 1)
+        full_h = (self.big_grid_size - (self.overlap * self.scale)) * (len(self.tiles) + 1)
         self.result = PIL.Image.new('RGBA', (full_h, full_w))
 
     def _grid(self) -> List[List[PIL.Image.Image]]:
@@ -63,14 +68,11 @@ class Upscaler:
         x_idx = idx % len(self.tiles[0])
         y_idx = idx // len(self.tiles[0])
         tile_to_upscale = self.tiles[y_idx][x_idx]
-        tile_to_upscale.resize((self.big_grid_size, self.big_grid_size))
-        tensor = ToTensor()(tile_to_upscale.resize((self.big_grid_size, self.big_grid_size))).unsqueeze(0).float()
+        upscaled_tile = tile_to_upscale.resize((self.big_grid_size, self.big_grid_size))
+        tensor = ToTensor()(upscaled_tile).unsqueeze(0)
 
-        if self.onnx:
-            inputs = {self.model.get_inputs()[0].name: tensor.numpy()}
-            img_hr = torch.tensor(self.model.run(None, inputs)[0].squeeze(0))
-        else:
-            img_hr, *_ = self.pt_model(tensor.cuda())
+        inputs = {self.model.get_inputs()[0].name: tensor.numpy()}
+        img_hr = torch.tensor(self.model.run(None, inputs)[0].squeeze(0))
         img_hr = to_image(img_hr.clip(0, 1))
 
         self.result.paste(img_hr,

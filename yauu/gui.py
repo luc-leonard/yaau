@@ -8,6 +8,7 @@ from super_res import Upscaler
 class Application(Frame):
     def __init__(self, master=None):
         super().__init__(master)
+
         self.master = master
         self.pack()
 
@@ -28,7 +29,7 @@ class Application(Frame):
         self.model = filepath
 
     def run(self):
-        upscaler = Upscaler(self.input_file, self.model, 2, 64, 2, 'cuda')
+        upscaler = Upscaler(self.input_file, self.model, 4, 64, 2, 'cuda')
         for i in range(len(upscaler)):
             print(i)
             upscaler.upscale_tile(i)
